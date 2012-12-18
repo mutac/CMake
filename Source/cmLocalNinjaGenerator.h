@@ -45,8 +45,16 @@ public:
   /// Overloaded methods. @see cmLocalGenerator::GetTargetDirectory()
   virtual std::string GetTargetDirectory(cmTarget const& target) const;
 
+  /// Make a path relative to the local generator (is there a better way to do this?)
+  std::string GetRelativePath(std::string path);
+
   const cmGlobalNinjaGenerator* GetGlobalNinjaGenerator() const;
   cmGlobalNinjaGenerator* GetGlobalNinjaGenerator();
+
+  /// Overloaded methods. @see cmLocalGenerator::UpdateDependencies()
+  virtual bool UpdateDependencies(const char* /* tgtInfo */,
+    bool /*verbose*/,
+    bool /*color*/);
 
   /**
    * Shortcut to get the cmake instance throw the global generator.

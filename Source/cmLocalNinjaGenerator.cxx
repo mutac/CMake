@@ -86,13 +86,15 @@ void cmLocalNinjaGenerator::Configure()
     {
     this->HomeRelativeOutputPath = "";
     }
+  if(!this->HomeRelativeOutputPath.empty())
+  {
+    this->HomeRelativeOutputPath += "/";
+  }
   this->cmLocalGenerator::Configure();
-
 }
 
 // TODO: Picked up from cmLocalUnixMakefileGenerator3.  Refactor it.
-std::string cmLocalNinjaGenerator
-::GetTargetDirectory(cmTarget const& target) const
+std::string cmLocalNinjaGenerator::GetTargetDirectory(cmTarget const& target) const
 {
   std::string dir = cmake::GetCMakeFilesDirectoryPostSlash();
   dir += target.GetName();
@@ -102,6 +104,13 @@ std::string cmLocalNinjaGenerator
   dir += ".dir";
 #endif
   return dir;
+}
+
+std::string cmLocalNinjaGenerator::GetRelativePath(std::string path)
+{
+  std::string dir = this->GetHomeRelativeOutputPath();
+  dir += path;
+  return this->Convert(dir.c_str(), NONE, UNCHANGED);
 }
 
 //----------------------------------------------------------------------------
@@ -392,4 +401,15 @@ void cmLocalNinjaGenerator::WriteCustomCommandBuildStatements()
 
     this->WriteCustomCommandBuildStatement(i->first, ccTargetDeps);
   }
+}
+
+bool cmLocalNinjaGenerator::UpdateDependencies(const char* tgtInfo, bool verbose, bool color)
+{
+  if (!this->Makefile->ReadListFile(0, tgtInfo) ||
+    cmSystemTools::GetErrorOccuredFlag())
+  {
+    cmSystemTools::Error("Target DependInfo.cmake file not found");
+  }
+
+  return true;
 }

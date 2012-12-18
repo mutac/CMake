@@ -301,9 +301,7 @@ std::string cmNinjaTargetGenerator::GetTargetOutputDir() const
   return ConvertToNinjaPath(dir.c_str());
 }
 
-std::string
-cmNinjaTargetGenerator
-::GetTargetFilePath(const std::string& name) const
+std::string cmNinjaTargetGenerator::GetTargetFilePath(const std::string& name) const
 {
   std::string path = this->GetTargetOutputDir();
   if (path.empty() || path == ".")
@@ -317,7 +315,6 @@ std::string cmNinjaTargetGenerator::GetTargetName() const
 {
   return this->Target->GetName();
 }
-
 
 bool cmNinjaTargetGenerator::SetMsvcTargetPdbVariable(cmNinjaVars& vars) const
 {

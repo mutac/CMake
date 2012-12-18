@@ -52,6 +52,9 @@ public:
   /// It is included in the main build.ninja file.
   static const char* NINJA_RULES_FILE;
 
+  /// The default name of the Cmake dependency info manifest file.
+  static const char* CMAKE_FILE;
+
   /// The indentation string used when generating Ninja's build file.
   static const char* INDENT;
 
@@ -314,6 +317,9 @@ private:
   void OpenRulesFileStream();
   void CloseRulesFileStream();
 
+  void OpenCmakeFileStream();
+  void CloseCmakeFileStream();
+
   /// Write the common disclaimer text at the top of each build file.
   void WriteDisclaimer(std::ostream& os);
 
@@ -326,6 +332,7 @@ private:
   void WriteTargetRebuildManifest(std::ostream& os);
   void WriteTargetClean(std::ostream& os);
   void WriteTargetHelp(std::ostream& os);
+  void WriteCmakeDependencyInfo(std::ostream& os);
 
   std::string ninjaCmd() const;
 
@@ -336,6 +343,9 @@ private:
   /// The file containing the rule statements. (The action attached to each
   /// edge of the compilation DAG).
   cmGeneratedFileStream* RulesFileStream;
+  /// The file containing a list of dependency info files
+  cmGeneratedFileStream* CmakeFileStream;
+
   cmGeneratedFileStream* CompileCommandsStream;
 
   /// The type used to store the set of rules added to the generated build
