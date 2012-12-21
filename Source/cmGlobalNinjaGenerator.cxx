@@ -473,7 +473,6 @@ void cmGlobalNinjaGenerator::Generate()
 {
   this->OpenBuildFileStream();
   this->OpenRulesFileStream();
-  this->OpenCmakeFileStream();
 
   this->cmGlobalGenerator::Generate();
 
@@ -481,15 +480,12 @@ void cmGlobalNinjaGenerator::Generate()
   this->WriteTargetAliases(*this->BuildFileStream);
   this->WriteBuiltinTargets(*this->BuildFileStream);
 
-  cmDependInfoManifest::Write(*this->CmakeFileStream, *this);
-
   if (cmSystemTools::GetErrorOccuredFlag()) {
     this->RulesFileStream->setstate(std::ios_base::failbit);
     this->BuildFileStream->setstate(std::ios_base::failbit);
   }
 
   this->CloseCompileCommandsStream();
-  this->CloseCmakeFileStream();
   this->CloseRulesFileStream();
   this->CloseBuildFileStream();
 }

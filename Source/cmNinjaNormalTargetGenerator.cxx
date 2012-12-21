@@ -96,11 +96,14 @@ void cmNinjaNormalTargetGenerator::Generate()
     this->WriteLinkStatement();
     }
 
-  // Create implicit dependency scanning config file (DepInfo.cmake)
-  this->WriteImplicitDependencyScanConfig();
+  if (this->GetUseCmakeDependencyScanner())
+  {
+    // Create implicit dependency scanning config file (DepInfo.cmake)
+    this->WriteDependencyScanConfig();
 
-  // Write implicit dependency scanning rule (<target>/depend)
-  this->WriteImplicitDependencyScanBuildStatements();
+    // Write implicit dependency scanning rule
+    this->WriteDependencyScanBuildStatement();
+  }
 }
 
 void cmNinjaNormalTargetGenerator::WriteLanguagesRules()
@@ -433,7 +436,13 @@ void cmNinjaNormalTargetGenerator::WriteLinkStatement()
 
   // Compute specific libraries to link with.
   cmNinjaDeps explicitDeps = this->GetObjects();
+
   cmNinjaDeps implicitDeps = this->ComputeLinkDeps();
+  if (this->GetUseCmakeDependencyScanner())
+  {
+    // Have cmake scan implicit dependencies when building this rule.
+    implicitDeps.push_back(this->GetDependencyScanRuleName());
+  }
 
   std::string frameworkPath;
   std::string linkPath;

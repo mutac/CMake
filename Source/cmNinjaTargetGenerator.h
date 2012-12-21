@@ -114,9 +114,18 @@ protected:
   void WriteObjectBuildStatements();
   void WriteObjectBuildStatement(cmSourceFile* source);
   void WriteCustomCommandBuildStatement(cmCustomCommand *cc);
-  void WriteImplicitDependencyScanBuildStatements();
+  void WriteDependencyScanBuildStatement();
+  void WriteDependencyScanConfig();
 
-  void WriteImplicitDependencyScanConfig();
+  const std::string& GetDependencyScanRuleName();
+  bool GetUseCmakeDependencyScanner() const
+  {
+    return this->UseCmakeDependencyScanner;
+  }
+  void SetUseCmakeDependencyScanner(bool enable)
+  {
+    this->UseCmakeDependencyScanner = enable;
+  }
 
   cmNinjaDeps GetObjects() const
   { return this->ObjectPaths; }
@@ -155,11 +164,14 @@ private:
   cmLocalNinjaGenerator* LocalGenerator;
   /// List of object files for this target.
   cmNinjaDeps ObjectPaths;
-  std::string DependInfoFileName;
-  cmGeneratedFileStream* DependInfoFileStream;
 
   // The windows module definition source file (.def), if any.
   std::string ModuleDefinitionFile;
+
+  bool UseCmakeDependencyScanner;
+  std::string DependencyScanRuleName;
+  std::string DependInfoFileName;
+  cmGeneratedFileStream* DependInfoFileStream;
 };
 
 #endif // ! cmNinjaTargetGenerator_h

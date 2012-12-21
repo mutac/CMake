@@ -385,14 +385,14 @@ void cmLocalNinjaGenerator::WriteCustomCommandBuildStatements()
 
 bool cmLocalNinjaGenerator::UpdateDependencies(const char* tgtInfo, bool verbose, bool color)
 {
-//   if (!this->Makefile->ReadListFile(0, tgtInfo) ||
-//     cmSystemTools::GetErrorOccuredFlag())
-//   {
-//     cmSystemTools::Error("Target DependInfo.cmake file not found");
-//   }
+  if (!this->Makefile->ReadListFile(0, tgtInfo) ||
+    cmSystemTools::GetErrorOccuredFlag())
+  {
+    cmSystemTools::Error("Target DependInfo.cmake file not found");
+  }
 
   std::string message;
-  message += "CMAKE_DEPENDS: ";
+  message += "Running CMAKE_DEPENDS: ";
   message += tgtInfo;
   message += "\r\n";
 

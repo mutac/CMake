@@ -66,7 +66,8 @@ cmNinjaTargetGenerator::cmNinjaTargetGenerator(cmTarget* target)
     LocalGenerator(
       static_cast<cmLocalNinjaGenerator*>(Makefile->GetLocalGenerator())),
     ObjectPaths(),
-    DependInfoFileStream(0)
+    DependInfoFileStream(0),
+    UseCmakeDependencyScanner(true)
 {
   this->GeneratorTarget =
     this->GetGlobalGenerator()->GetGeneratorTarget(target);
@@ -685,7 +686,7 @@ cmNinjaTargetGenerator
   }
 }
 
-void cmNinjaTargetGenerator::WriteImplicitDependencyScanConfig()
+void cmNinjaTargetGenerator::WriteDependencyScanConfig()
 {
   //
   // Create DependInfo.cmake file for target
@@ -698,7 +699,18 @@ void cmNinjaTargetGenerator::WriteImplicitDependencyScanConfig()
   this->CloseDependInfoFileStream();
 }
 
-void cmNinjaTargetGenerator::WriteImplicitDependencyScanBuildStatements()
+const std::string& cmNinjaTargetGenerator::GetDependencyScanRuleName()
+{
+  if (this->DependencyScanRuleName.length() <= 0)
+  {
+    this->DependencyScanRuleName = std::string(this->Target->GetName());
+    this->DependencyScanRuleName += ".depends";
+  }
+
+  return this->DependencyScanRuleName; 
+}
+
+void cmNinjaTargetGenerator::WriteDependencyScanBuildStatement()
 {
   cmGeneratedFileStream& os = this->GetRulesFileStream();
 
@@ -724,28 +736,10 @@ void cmNinjaTargetGenerator::WriteImplicitDependencyScanBuildStatements()
   //
   // This gives the dependency scanner enough information to recreate
   // the state of our local generator sufficiently for its needs.
-//   dependencyScanCommand << 
-//     localGenerator->ConvertToOutputFormat(
-//       this->Makefile->GetRequiredDefinition("CMAKE_COMMAND"),
-//       cmLocalGenerator::SHELL) 
-//     << " -E cmake_depends \""
-//     << globalGenerator->GetName() << "\" "
-//     << localGenerator->Convert(this->Makefile->GetHomeDirectory(),
-//       cmLocalGenerator::FULL, cmLocalGenerator::SHELL)
-//     << " "
-//     << localGenerator->Convert(this->Makefile->GetStartDirectory(),
-//       cmLocalGenerator::FULL, cmLocalGenerator::SHELL)
-//     << " "
-//     << localGenerator->Convert(this->Makefile->GetHomeOutputDirectory(),
-//       cmLocalGenerator::FULL, cmLocalGenerator::SHELL)
-//     << " "
-//     << localGenerator->Convert(this->Makefile->GetStartOutputDirectory(),
-//       cmLocalGenerator::FULL, cmLocalGenerator::SHELL)
-//     << " "
-//     << localGenerator->Convert(this->DependInfoFileName.c_str(),
-//       cmLocalGenerator::FULL, cmLocalGenerator::SHELL);
 
-  // Make sure all custom command outputs in this target are build too
+  //
+  // TODO DEPSCAN: Make sure all custom command outputs in this target are build too?
+  //
 
   //
   // Add a target to re-scan implicit dependencies of 'this' target
@@ -772,83 +766,29 @@ void cmNinjaTargetGenerator::WriteImplicitDependencyScanBuildStatements()
   vars["DEP_INFO_FILE"] = localGenerator->Convert(
     this->DependInfoFileName.c_str(),
     cmLocalGenerator::FULL, cmLocalGenerator::SHELL);
+    
+  // Rule: /path/to/<target>.depends
+  cmNinjaDeps targetDepRule(1, this->GetDependencyScanRuleName());
 
-  cmNinjaDeps outputs;
-
-  // output /path/to/<obj>.d
-  std::string depFile = this->Target->GetName();
-  depFile += ".d";
-
-  outputs.push_back(depFile);
+  // Inputs (TODO: Should this be the set that was written to the DependInfo.cmake file?)
+  cmNinjaDeps inputs;
+//   for (std::vector<cmSourceFile*>::const_iterator
+//     source = this->Target->GetSourceFiles().begin();
+//     source != this->Target->GetSourceFiles().end();
+//     source++)
+//   {
+//     inputs.push_back(this->GetSourceFilePath(*source));
+//   }
 
   cmGlobalNinjaGenerator::WriteBuild(this->GetBuildFileStream(),
-    "Rebuild dependency file",
+    "Generate dependency files",
     "DEPENDS",
-    outputs,
-    cmNinjaDeps(),
+    targetDepRule,
+    inputs,
     cmNinjaDeps(),
     cmNinjaDeps(),
     vars
     );
-
-// 
-// 
-//   this->SetMsvcTargetPdbVariable(vars);
-// 
-//   if(this->Makefile->IsOn("CMAKE_EXPORT_COMPILE_COMMANDS"))
-//   {
-//     cmLocalGenerator::RuleVariables compileObjectVars;
-//     std::string lang = language;
-//     compileObjectVars.Language = lang.c_str();
-// 
-//     std::string escapedSourceFileName = sourceFileName;
-// 
-//     if (!cmSystemTools::FileIsFullPath(sourceFileName.c_str()))
-//     {
-//       escapedSourceFileName = cmSystemTools::CollapseFullPath(
-//         escapedSourceFileName.c_str(),
-//         this->GetGlobalGenerator()->GetCMakeInstance()->
-//         GetHomeOutputDirectory());
-//     }
-// 
-//     escapedSourceFileName =
-//       this->LocalGenerator->ConvertToOutputFormat(
-//       escapedSourceFileName.c_str(), cmLocalGenerator::SHELL);
-// 
-//     compileObjectVars.Source = escapedSourceFileName.c_str();
-//     compileObjectVars.Object = objectFileName.c_str();
-//     compileObjectVars.ObjectDir = objectDir.c_str();
-//     compileObjectVars.Flags = vars["FLAGS"].c_str();
-//     compileObjectVars.Defines = vars["DEFINES"].c_str();
-// 
-//     // Rule for compiling object file.
-//     std::string compileCmdVar = "CMAKE_";
-//     compileCmdVar += language;
-//     compileCmdVar += "_COMPILE_OBJECT";
-//     std::string compileCmd =
-//       this->GetMakefile()->GetRequiredDefinition(compileCmdVar.c_str());
-//     std::vector<std::string> compileCmds;
-//     cmSystemTools::ExpandListArgument(compileCmd, compileCmds);
-// 
-//     for (std::vector<std::string>::iterator i = compileCmds.begin();
-//       i != compileCmds.end(); ++i)
-//       this->GetLocalGenerator()->ExpandRuleVariables(*i, compileObjectVars);
-// 
-//     std::string cmdLine =
-//       this->GetLocalGenerator()->BuildCommandLine(compileCmds);
-// 
-//     this->GetGlobalGenerator()->AddCXXCompileCommand(cmdLine,
-//       sourceFileName);
-//   }
-// 
-//   cmGlobalNinjaGenerator::WriteBuild(this->GetBuildFileStream(),
-//     comment,
-//     rule,
-//     outputs,
-//     explicitDeps,
-//     implicitDeps,
-//     orderOnlyDeps,
-//     vars);
 }
 
 //----------------------------------------------------------------------------
