@@ -297,6 +297,16 @@ public:
    */
   virtual std::string GetTargetDirectory(cmTarget const& target) const;
 
+  /** @returns the relative path between the HomeOutputDirectory and this
+   * local generators StartOutputDirectory.
+   */
+  virtual std::string GetHomeRelativeOutputPath() const
+  { return this->HomeRelativeOutputPath; }
+
+  /** @returns Make a path relative to the local generator (is there a better way to do this?)
+   */
+  virtual std::string GetRelativePath(std::string path);
+
   /**
    * Get the level of backwards compatibility requested by the project
    * in this directory.  This is the value of the CMake variable
@@ -448,6 +458,7 @@ protected:
   unsigned int BackwardsCompatibility;
   bool BackwardsCompatibilityFinal;
 private:
+  std::string HomeRelativeOutputPath;
   std::string ConvertToOutputForExistingCommon(const char* remote,
                                                std::string const& result);
 

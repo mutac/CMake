@@ -41,6 +41,7 @@
 #endif
 
 cmLocalGenerator::cmLocalGenerator()
+  : HomeRelativeOutputPath("")
 {
   this->Makefile = 0; // moved to after set on global
   this->Parent = 0;
@@ -119,6 +120,19 @@ void cmLocalGenerator::Configure()
   this->UseRelativePaths = this->Makefile->IsOn("CMAKE_USE_RELATIVE_PATHS");
 
   this->ComputeObjectMaxPath();
+
+  // Compute the path to use when referencing the current output
+  // directory from the top output directory.
+  this->HomeRelativeOutputPath =
+    this->Convert(this->Makefile->GetStartOutputDirectory(), HOME_OUTPUT);
+  if(this->HomeRelativeOutputPath == ".")
+  {
+    this->HomeRelativeOutputPath = "";
+  }
+  if(!this->HomeRelativeOutputPath.empty())
+  {
+    this->HomeRelativeOutputPath += "/";
+  }
 
   this->Configured = true;
 }
@@ -3297,4 +3311,12 @@ void cmLocalGenerator::GenerateFrameworkInfoPList(cmTarget* target,
   cmLGInfoProp(mf, target, "MACOSX_FRAMEWORK_BUNDLE_VERSION");
   mf->ConfigureFile(inFile.c_str(), fname, false, false, false);
   mf->PopScope();
+}
+
+//----------------------------------------------------------------------------
+std::string cmLocalGenerator::GetRelativePath(std::string path)
+{
+  std::string dir = this->GetHomeRelativeOutputPath();
+  dir += path;
+  return this->Convert(dir.c_str(), cmLocalGenerator::NONE, UNCHANGED);
 }

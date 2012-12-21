@@ -137,6 +137,8 @@ set(SRCS
   cmCustomCommandGenerator.h
   cmDefinitions.cxx
   cmDefinitions.h
+  cmDependInfo.cxx
+  cmDependInfo.h
   cmDepends.cxx
   cmDepends.h
   cmDependsC.cxx

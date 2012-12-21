@@ -47,11 +47,6 @@ public:
    */
   virtual void Generate();
 
-
-  // this returns the relative path between the HomeOutputDirectory and this
-  // local generators StartOutputDirectory
-  const std::string &GetHomeRelativeOutputPath();
-
   // Write out a make rule
   void WriteMakeRule(std::ostream& os,
                      const char* comment,
@@ -340,8 +335,6 @@ private:
   bool MakeCommandEscapeTargetTwice;
   bool BorlandMakeCurlyHack;
   //==========================================================================
-
-  std::string HomeRelativeOutputPath;
 
   /* Copy the setting of CMAKE_COLOR_MAKEFILE from the makefile at the
      beginning of generation to avoid many duplicate lookups.  */

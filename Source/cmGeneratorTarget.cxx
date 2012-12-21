@@ -188,6 +188,16 @@ void cmGeneratorTarget::LookupObjectLibraries()
 }
 
 //----------------------------------------------------------------------------
+std::string cmGeneratorTarget::GetObjectFilePath(const cmSourceFile* source)
+{
+  std::string objectDir = this->LocalGenerator->GetTargetDirectory(*this->Target); 
+  std::string path = this->LocalGenerator->GetRelativePath(objectDir);
+  path += "/" + this->Objects[source];
+
+  return path;
+}
+
+//----------------------------------------------------------------------------
 void cmGeneratorTarget::UseObjectLibraries(std::vector<std::string>& objs)
 {
   for(std::vector<cmTarget*>::const_iterator

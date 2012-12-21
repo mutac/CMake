@@ -48,6 +48,10 @@ protected:
 
   cmGeneratedFileStream& GetBuildFileStream() const;
   cmGeneratedFileStream& GetRulesFileStream() const;
+  cmGeneratedFileStream& GetDependInfoFileStream() const;
+
+  void OpenDependInfoFileStream();
+  void CloseDependInfoFileStream();
 
   cmTarget* GetTarget() const
   { return this->Target; }
@@ -110,9 +114,12 @@ protected:
   void WriteObjectBuildStatements();
   void WriteObjectBuildStatement(cmSourceFile* source);
   void WriteCustomCommandBuildStatement(cmCustomCommand *cc);
+  void WriteImplicitDependencyScanBuildStatements();
+
+  void WriteImplicitDependencyScanConfig();
 
   cmNinjaDeps GetObjects() const
-  { return this->Objects; }
+  { return this->ObjectPaths; }
 
   // Helper to add flag for windows .def file.
   void AddModuleDefinitionFlag(std::string& flags);
@@ -147,7 +154,9 @@ private:
   cmMakefile* Makefile;
   cmLocalNinjaGenerator* LocalGenerator;
   /// List of object files for this target.
-  cmNinjaDeps Objects;
+  cmNinjaDeps ObjectPaths;
+  std::string DependInfoFileName;
+  cmGeneratedFileStream* DependInfoFileStream;
 
   // The windows module definition source file (.def), if any.
   std::string ModuleDefinitionFile;

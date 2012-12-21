@@ -95,6 +95,12 @@ void cmNinjaNormalTargetGenerator::Generate()
     this->WriteLinkRule(true);  // write rule with rspfile support
     this->WriteLinkStatement();
     }
+
+  // Create implicit dependency scanning config file (DepInfo.cmake)
+  this->WriteImplicitDependencyScanConfig();
+
+  // Write implicit dependency scanning rule (<target>/depend)
+  this->WriteImplicitDependencyScanBuildStatements();
 }
 
 void cmNinjaNormalTargetGenerator::WriteLanguagesRules()

@@ -331,6 +331,7 @@ int main(int ac, char** av)
 {
   cmSystemTools::EnableMSVCDebugHook();
   cmSystemTools::FindExecutableDirectory(av[0]);
+
   if(ac > 1 && strcmp(av[1], "--build") == 0)
     {
     return do_build(ac, av);

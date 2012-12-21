@@ -104,18 +104,6 @@ cmLocalUnixMakefileGenerator3::~cmLocalUnixMakefileGenerator3()
 //----------------------------------------------------------------------------
 void cmLocalUnixMakefileGenerator3::Configure()
 {
-  // Compute the path to use when referencing the current output
-  // directory from the top output directory.
-  this->HomeRelativeOutputPath =
-    this->Convert(this->Makefile->GetStartOutputDirectory(), HOME_OUTPUT);
-  if(this->HomeRelativeOutputPath == ".")
-    {
-    this->HomeRelativeOutputPath = "";
-    }
-  if(!this->HomeRelativeOutputPath.empty())
-    {
-    this->HomeRelativeOutputPath += "/";
-    }
   this->cmLocalGenerator::Configure();
 }
 
@@ -526,12 +514,6 @@ cmLocalUnixMakefileGenerator3
 }
 
 
-const std::string &cmLocalUnixMakefileGenerator3::GetHomeRelativeOutputPath()
-{
-  return this->HomeRelativeOutputPath;
-}
-
-
 //----------------------------------------------------------------------------
 void
 cmLocalUnixMakefileGenerator3
@@ -882,7 +864,7 @@ std::string
 cmLocalUnixMakefileGenerator3
 ::GetRelativeTargetDirectory(cmTarget const& target)
 {
-  std::string dir = this->HomeRelativeOutputPath;
+  std::string dir = this->GetHomeRelativeOutputPath();
   dir += this->GetTargetDirectory(target);
   return this->Convert(dir.c_str(),NONE,UNCHANGED);
 }

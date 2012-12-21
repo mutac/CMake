@@ -54,6 +54,9 @@ public:
       time config name placeholder if needed for the generator.  */
   std::string ObjectDirectory;
 
+  /// Map an object to its full output path;
+  std::string GetObjectFilePath(const cmSourceFile* source);
+
   std::vector<cmTarget*> ObjectLibraries;
 
   void UseObjectLibraries(std::vector<std::string>& objs);

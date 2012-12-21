@@ -52,7 +52,6 @@ public:
   /// It is included in the main build.ninja file.
   static const char* NINJA_RULES_FILE;
 
-  /// The default name of the Cmake dependency info manifest file.
   static const char* CMAKE_FILE;
 
   /// The indentation string used when generating Ninja's build file.
@@ -332,7 +331,7 @@ private:
   void WriteTargetRebuildManifest(std::ostream& os);
   void WriteTargetClean(std::ostream& os);
   void WriteTargetHelp(std::ostream& os);
-  void WriteCmakeDependencyInfo(std::ostream& os);
+  void WriteTargetScanImplicitDependencies(std::ostream& os);
 
   std::string ninjaCmd() const;
 

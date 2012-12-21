@@ -45,9 +45,6 @@ public:
   /// Overloaded methods. @see cmLocalGenerator::GetTargetDirectory()
   virtual std::string GetTargetDirectory(cmTarget const& target) const;
 
-  /// Make a path relative to the local generator (is there a better way to do this?)
-  std::string GetRelativePath(std::string path);
-
   const cmGlobalNinjaGenerator* GetGlobalNinjaGenerator() const;
   cmGlobalNinjaGenerator* GetGlobalNinjaGenerator();
 
@@ -68,11 +65,6 @@ public:
 
   /// @return whether we are processing the top CMakeLists.txt file.
   bool isRootMakefile() const;
-
-  /// @returns the relative path between the HomeOutputDirectory and this
-  /// local generators StartOutputDirectory.
-  std::string GetHomeRelativeOutputPath() const
-  { return this->HomeRelativeOutputPath; }
 
   std::string ConvertToNinjaPath(const char *path);
 
@@ -129,9 +121,7 @@ private:
 
   void WriteCustomCommandBuildStatements();
 
-
   std::string ConfigName;
-  std::string HomeRelativeOutputPath;
 
   typedef std::map<cmCustomCommand const*, std::set<cmTarget*> >
     CustomCommandTargetMap;

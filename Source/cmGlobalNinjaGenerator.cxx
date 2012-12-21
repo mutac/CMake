@@ -15,6 +15,7 @@
 #include "cmMakefile.h"
 #include "cmGeneratedFileStream.h"
 #include "cmGeneratorTarget.h"
+#include "cmDependInfo.h"
 #include "cmVersion.h"
 
 const char* cmGlobalNinjaGenerator::NINJA_BUILD_FILE = "build.ninja";
@@ -479,7 +480,8 @@ void cmGlobalNinjaGenerator::Generate()
   this->WriteAssumedSourceDependencies();
   this->WriteTargetAliases(*this->BuildFileStream);
   this->WriteBuiltinTargets(*this->BuildFileStream);
-  this->WriteCmakeDependencyInfo(*this->CmakeFileStream);
+
+  cmDependInfoManifest::Write(*this->CmakeFileStream, *this);
 
   if (cmSystemTools::GetErrorOccuredFlag()) {
     this->RulesFileStream->setstate(std::ios_base::failbit);
@@ -998,6 +1000,7 @@ void cmGlobalNinjaGenerator::WriteBuiltinTargets(std::ostream& os)
 
   this->WriteTargetAll(os);
   this->WriteTargetRebuildManifest(os);
+  this->WriteTargetScanImplicitDependencies(os);
   this->WriteTargetClean(os);
   this->WriteTargetHelp(os);
 }
@@ -1124,34 +1127,45 @@ void cmGlobalNinjaGenerator::WriteTargetHelp(std::ostream& os)
              /*variables=*/ cmNinjaVars());
 }
 
-void cmGlobalNinjaGenerator::WriteCmakeDependencyInfo(std::ostream& os)
+void cmGlobalNinjaGenerator::WriteTargetScanImplicitDependencies(std::ostream& os)
 {
+  cmLocalGenerator *lg = this->LocalGenerators[0];
+  cmMakefile* mfRoot = lg->GetMakefile();
 
-  // now list all the target info files
-  os << "# Dependency information for all targets:\n";
-  os << "SET(CMAKE_DEPEND_INFO_FILES\n";
-  for (unsigned int i = 0; i < this->LocalGenerators.size(); ++i)
-  {
-    cmLocalNinjaGenerator* lg = 
-      static_cast<cmLocalNinjaGenerator *>(this->LocalGenerators[i]);
+  //
+  // Add a command to call CMake to scan dependencies.  CMake will
+  // touch the corresponding depends file after scanning dependencies.
+  //
+  cmOStringStream dependencyScanCommand;
 
-    // for all of out targets
-    for (cmTargets::iterator l = lg->GetMakefile()->GetTargets().begin();
-      l != lg->GetMakefile()->GetTargets().end(); l++)
-    {
-      if((l->second.GetType() == cmTarget::EXECUTABLE) ||
-        (l->second.GetType() == cmTarget::STATIC_LIBRARY) ||
-        (l->second.GetType() == cmTarget::SHARED_LIBRARY) ||
-        (l->second.GetType() == cmTarget::MODULE_LIBRARY) ||
-        (l->second.GetType() == cmTarget::OBJECT_LIBRARY) ||
-        (l->second.GetType() == cmTarget::UTILITY))
-      {
-        std::string tname = lg->GetRelativePath(lg->GetTargetDirectory(l->second));
-        tname += "/DependInfo.cmake";
-        cmSystemTools::ConvertToUnixSlashes(tname);
-        os << "  \"" << tname.c_str() << "\"\n";
-      }
-    }
-  }
-  os << "  )\n";
+  // Generate a call this signature:
+  //
+  //   cmake -E cmake_depends <generator>
+  //                          <home-src-dir> <start-src-dir>
+  //                          <home-out-dir> <start-out-dir>
+  //                          <dep-info> --color=$(COLOR)
+  //
+  // This gives the dependency scanner enough information to recreate
+  // the state of our local generator sufficiently for its needs.
+
+  dependencyScanCommand << 
+    lg->ConvertToOutputFormat(
+    mfRoot->GetRequiredDefinition("CMAKE_COMMAND"),
+    cmLocalGenerator::SHELL) 
+    << " -E cmake_depends \""
+    << this->GetName() << "\" "
+    << "$HOME_SRC_DIR $START_SRC_DIR "
+    << "$HOME_OUT_DIR $START_OUT_DIR "
+    << "$DEP_INFO_FILE";
+
+  WriteRule(*this->RulesFileStream,
+    "DEPENDS",
+    dependencyScanCommand.str(),
+    "Scanning implicit dependencies of $out",
+    "Use CMake to scan implicit dependencies (e.g. header files) and generate a .d dependency file.",
+    /*depfile=*/ "",
+    /*rspfile=*/ "",
+    /*rspcontent*/ "",
+    /*restat=*/ false,
+    /*generator=*/ false);
 }

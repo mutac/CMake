@@ -25,7 +25,6 @@
 cmLocalNinjaGenerator::cmLocalNinjaGenerator()
   : cmLocalGenerator()
   , ConfigName("")
-  , HomeRelativeOutputPath("")
 {
   this->IsMakefileGenerator = true;
 #ifdef _WIN32
@@ -78,18 +77,6 @@ void cmLocalNinjaGenerator::Generate()
 //   Source/cmGlobalGenerator.cxx
 void cmLocalNinjaGenerator::Configure()
 {
-  // Compute the path to use when referencing the current output
-  // directory from the top output directory.
-  this->HomeRelativeOutputPath =
-    this->Convert(this->Makefile->GetStartOutputDirectory(), HOME_OUTPUT);
-  if(this->HomeRelativeOutputPath == ".")
-    {
-    this->HomeRelativeOutputPath = "";
-    }
-  if(!this->HomeRelativeOutputPath.empty())
-  {
-    this->HomeRelativeOutputPath += "/";
-  }
   this->cmLocalGenerator::Configure();
 }
 
@@ -104,13 +91,6 @@ std::string cmLocalNinjaGenerator::GetTargetDirectory(cmTarget const& target) co
   dir += ".dir";
 #endif
   return dir;
-}
-
-std::string cmLocalNinjaGenerator::GetRelativePath(std::string path)
-{
-  std::string dir = this->GetHomeRelativeOutputPath();
-  dir += path;
-  return this->Convert(dir.c_str(), NONE, UNCHANGED);
 }
 
 //----------------------------------------------------------------------------
@@ -405,11 +385,18 @@ void cmLocalNinjaGenerator::WriteCustomCommandBuildStatements()
 
 bool cmLocalNinjaGenerator::UpdateDependencies(const char* tgtInfo, bool verbose, bool color)
 {
-  if (!this->Makefile->ReadListFile(0, tgtInfo) ||
-    cmSystemTools::GetErrorOccuredFlag())
-  {
-    cmSystemTools::Error("Target DependInfo.cmake file not found");
-  }
+//   if (!this->Makefile->ReadListFile(0, tgtInfo) ||
+//     cmSystemTools::GetErrorOccuredFlag())
+//   {
+//     cmSystemTools::Error("Target DependInfo.cmake file not found");
+//   }
+
+  std::string message;
+  message += "CMAKE_DEPENDS: ";
+  message += tgtInfo;
+  message += "\r\n";
+
+  cmSystemTools::Stdout(message.c_str());
 
   return true;
 }
