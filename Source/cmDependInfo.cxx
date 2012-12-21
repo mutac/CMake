@@ -24,53 +24,56 @@
 #include "cmSourceFile.h"
 #include "cmSystemTools.h"
 #include "cmComputeLinkInformation.h"
+#include "cmDependsC.h"
+#include "cmDependsFortran.h"
+#include "cmDependsJava.h"
 
 //////////////////////////////////////////////////////////////////////////
 // cmDependInfoManifest
 //////////////////////////////////////////////////////////////////////////
 
-const char* cmDependInfoManifest::DEPEND_INFO_MANIFEST_FILE = "Makefile.cmake";
-
-cmDependInfoManifest::cmDependInfoManifest()
-{
-}
-
-cmDependInfoManifest::~cmDependInfoManifest()
-{
-}
-
-void cmDependInfoManifest::Write(cmGeneratedFileStream& os, cmGlobalGenerator& generator)
-{
-  const std::vector<cmLocalGenerator*>& localGenerators = generator.GetLocalGenerators();
-
-  // now list all the target info files
-  os << "# Dependency information for all targets:\n";
-  os << "SET(CMAKE_DEPEND_INFO_FILES\n";
-  for (unsigned int i = 0; i < localGenerators.size(); ++i)
-  {
-    cmLocalGenerator* lg = localGenerators[i];
-
-    // for all of out targets
-    for (cmTargets::iterator l = lg->GetMakefile()->GetTargets().begin();
-      l != lg->GetMakefile()->GetTargets().end(); l++)
-    {
-      if((l->second.GetType() == cmTarget::EXECUTABLE) ||
-        (l->second.GetType() == cmTarget::STATIC_LIBRARY) ||
-        (l->second.GetType() == cmTarget::SHARED_LIBRARY) ||
-        (l->second.GetType() == cmTarget::MODULE_LIBRARY) ||
-        (l->second.GetType() == cmTarget::OBJECT_LIBRARY) ||
-        (l->second.GetType() == cmTarget::UTILITY))
-      {
-        std::string tname = lg->GetRelativePath(lg->GetTargetDirectory(l->second));
-        tname += "/";
-        tname += cmDependInfo::DEPEND_INFO_FILE;
-        cmSystemTools::ConvertToUnixSlashes(tname);
-        os << "  \"" << tname.c_str() << "\"\n";
-      }
-    }
-  }
-  os << "  )\n";
-}
+// const char* cmDependInfoManifest::DEPEND_INFO_MANIFEST_FILE = "Makefile.cmake";
+// 
+// cmDependInfoManifest::cmDependInfoManifest()
+// {
+// }
+// 
+// cmDependInfoManifest::~cmDependInfoManifest()
+// {
+// }
+// 
+// void cmDependInfoManifest::Write(cmGeneratedFileStream& os, cmGlobalGenerator& generator)
+// {
+//   const std::vector<cmLocalGenerator*>& localGenerators = generator.GetLocalGenerators();
+// 
+//   // now list all the target info files
+//   os << "# Dependency information for all targets:\n";
+//   os << "SET(CMAKE_DEPEND_INFO_FILES\n";
+//   for (unsigned int i = 0; i < localGenerators.size(); ++i)
+//   {
+//     cmLocalGenerator* lg = localGenerators[i];
+// 
+//     // for all of out targets
+//     for (cmTargets::iterator l = lg->GetMakefile()->GetTargets().begin();
+//       l != lg->GetMakefile()->GetTargets().end(); l++)
+//     {
+//       if((l->second.GetType() == cmTarget::EXECUTABLE) ||
+//         (l->second.GetType() == cmTarget::STATIC_LIBRARY) ||
+//         (l->second.GetType() == cmTarget::SHARED_LIBRARY) ||
+//         (l->second.GetType() == cmTarget::MODULE_LIBRARY) ||
+//         (l->second.GetType() == cmTarget::OBJECT_LIBRARY) ||
+//         (l->second.GetType() == cmTarget::UTILITY))
+//       {
+//         std::string tname = lg->GetRelativePath(lg->GetTargetDirectory(l->second));
+//         tname += "/";
+//         tname += cmDependInfo::DEPEND_INFO_FILE;
+//         cmSystemTools::ConvertToUnixSlashes(tname);
+//         os << "  \"" << tname.c_str() << "\"\n";
+//       }
+//     }
+//   }
+//   os << "  )\n";
+// }
 
 //////////////////////////////////////////////////////////////////////////
 // cmDependInfo
@@ -78,17 +81,69 @@ void cmDependInfoManifest::Write(cmGeneratedFileStream& os, cmGlobalGenerator& g
 
 const char* cmDependInfo::DEPEND_INFO_FILE = "DependInfo.cmake";
 
-cmDependInfo::cmDependInfo()
+cmDependInfo::cmDependInfo(cmLocalGenerator* generator)
 {
+  this->LocalGenerator = generator;
 }
 
 cmDependInfo::~cmDependInfo()
 {
+  this->LocalGenerator = NULL;
+}
+
+void cmDependInfo::Read(const char* depInfoFile)
+{
+  if (!this->LocalGenerator->GetMakefile()->ReadListFile(0, depInfoFile) ||
+    cmSystemTools::GetErrorOccuredFlag())
+  {
+    cmSystemTools::Error("Target DependInfo.cmake file not found");
+  }
+}
+
+void cmDependInfo::Scan(const char* directory)
+{
+  const char* languageList = this->LocalGenerator->GetMakefile()->GetSafeDefinition("CMAKE_DEPENDS_LANGUAGES");
+  std::vector<std::string> languages;
+  cmSystemTools::ExpandListArgument(languageList, languages);
+
+  for (std::vector<std::string>::iterator
+    language = languages.begin();
+    language != languages.end();
+    language++)
+  {
+    cmDepends* scanner = NULL;
+
+    if (*language == "C" || *language == "CXX" || *language == "RC" || *language == "ASM")
+    {
+      scanner = new cmDependsC(this->LocalGenerator, directory, language->c_str(), &this->FoundDependencies);
+    }
+#ifdef CMAKE_BUILD_WITH_CMAKE
+    else if(*language == "Fortran")
+    {
+      scanner = new cmDependsFortran(this->LocalGenerator);
+    }
+    else if(*language == "Java")
+    {
+      scanner = new cmDependsJava();
+    }
+#endif
+
+    if (scanner)
+    {
+      scanner->SetLocalGenerator(this->LocalGenerator);
+      scanner->SetFileComparison(
+        this->LocalGenerator->GetGlobalGenerator()->GetCMakeInstance()->GetFileComparison());
+      scanner->SetLanguage(language->c_str());
+      scanner->SetTargetDirectory(directory);
+
+      delete scanner;
+    }
+  }
 }
 
 void cmDependInfo::Write(cmGeneratedFileStream& os, cmGeneratorTarget& generatorTarget)
 {
-  const char* configurationName = generatorTarget.Makefile->GetDefinition("CMAKE_BUILD_TYPE");
+  const char* configurationName = this->LocalGenerator->GetMakefile()->GetDefinition("CMAKE_BUILD_TYPE");
   const cmTarget::LinkImplementation* linkImplementation = 
     generatorTarget.Target->GetLinkImplementation(configurationName); 
 
@@ -166,7 +221,7 @@ void cmDependInfo::Write(cmGeneratedFileStream& os, cmGeneratorTarget& generator
         if (objectPath.size() > 0)
         {
           //TODO: HACK... How are you supposed to do this?
-          std::string fullObjectPath = generatorTarget.LocalGenerator->Convert(
+          std::string fullObjectPath = this->LocalGenerator->Convert(
             cmLocalGenerator::HOME_OUTPUT,
             objectPath.c_str());
           
@@ -204,7 +259,7 @@ void cmDependInfo::Write(cmGeneratedFileStream& os, cmGeneratorTarget& generator
     compilerIdVar += *language + "_COMPILER_ID";
 
     const char* compilerIdVal = 
-      generatorTarget.Makefile->GetDefinition(compilerIdVar.c_str());
+      this->LocalGenerator->GetMakefile()->GetDefinition(compilerIdVar.c_str());
     if (compilerIdVal && *compilerIdVal)
     {
       os << "SET(" << compilerIdVar << " \"" << compilerIdVal << "\")\n";

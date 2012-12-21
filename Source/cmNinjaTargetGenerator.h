@@ -115,7 +115,7 @@ protected:
   void WriteObjectBuildStatement(cmSourceFile* source);
   void WriteCustomCommandBuildStatement(cmCustomCommand *cc);
   void WriteDependencyScanBuildStatement();
-  void WriteDependencyScanConfig();
+  void WriteCmakeDependencyScanInfo();
 
   const std::string& GetDependencyScanRuleName();
   bool GetUseCmakeDependencyScanner() const

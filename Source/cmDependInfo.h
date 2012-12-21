@@ -13,40 +13,48 @@
 #define cmDependInfo_h
 
 #include <map>
+#include <vector>
 
 #include "cmStandardIncludes.h"
 #include "cmDepends.h"
 
-class cmGlobalGenerator;
+//class cmGlobalGenerator;
 class cmGeneratedFileStream;
+class cmLocalGenerator;
 class cmGeneratorTarget;
 
-class cmDependInfoManifest
-{
-public:
-  static const char* DEPEND_INFO_MANIFEST_FILE;
-
-  /// 
-  /// 
-  static void Write(cmGeneratedFileStream& os, cmGlobalGenerator& generator);
-
-private:
-  cmDependInfoManifest();
-  ~cmDependInfoManifest();
-};
+// class cmDependInfoManifest
+// {
+// public:
+//   static const char* DEPEND_INFO_MANIFEST_FILE;
+// 
+//   /// 
+//   /// 
+//   static void Write(cmGeneratedFileStream& os, cmGlobalGenerator& generator);
+// 
+// private:
+//   cmDependInfoManifest();
+//   ~cmDependInfoManifest();
+// };
 
 class cmDependInfo
 {
 public:
-  static const char* DEPEND_INFO_FILE;
+  cmDependInfo(cmLocalGenerator* generator);
+  virtual ~cmDependInfo();
+
+  void Read(const char* depInfoFile);
+
+  void Scan(const char* directory);
 
   /// @description Write information (in DependInfo.cmake style) needed
   ///  to scan target components for implicit dependencies.
-  static void Write(cmGeneratedFileStream& os, cmGeneratorTarget& target);
+  void Write(cmGeneratedFileStream& os, cmGeneratorTarget& target);
 
+  static const char* DEPEND_INFO_FILE;
 private:
-  cmDependInfo();
-  virtual ~cmDependInfo();
+  cmLocalGenerator* LocalGenerator;
+  std::map<std::string, cmDepends::DependencyVector> FoundDependencies;
 };
 
 #endif // include guard

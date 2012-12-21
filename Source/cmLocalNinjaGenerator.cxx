@@ -18,6 +18,8 @@
 #include "cmGeneratedFileStream.h"
 #include "cmSourceFile.h"
 #include "cmComputeLinkInformation.h"
+#include "cmFileTimeComparison.h"
+#include "cmDependInfo.h"
 #include "cmake.h"
 
 #include <assert.h>
@@ -383,20 +385,18 @@ void cmLocalNinjaGenerator::WriteCustomCommandBuildStatements()
   }
 }
 
-bool cmLocalNinjaGenerator::UpdateDependencies(const char* tgtInfo, bool verbose, bool color)
+bool cmLocalNinjaGenerator::UpdateDependencies(const char* depInfoFile, bool verbose, bool color)
 {
-  if (!this->Makefile->ReadListFile(0, tgtInfo) ||
-    cmSystemTools::GetErrorOccuredFlag())
+  cmDependInfo dependInfo(this); 
+  dependInfo.Read(depInfoFile);
+
+  bool needToRescanDependencies = true;
+  std::string targetDirectory = cmSystemTools::GetFilenamePath(depInfoFile);
+
+  if (needToRescanDependencies)
   {
-    cmSystemTools::Error("Target DependInfo.cmake file not found");
+    dependInfo.Scan(targetDirectory.c_str());
   }
-
-  std::string message;
-  message += "Running CMAKE_DEPENDS: ";
-  message += tgtInfo;
-  message += "\r\n";
-
-  cmSystemTools::Stdout(message.c_str());
 
   return true;
 }

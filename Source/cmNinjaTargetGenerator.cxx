@@ -686,15 +686,16 @@ cmNinjaTargetGenerator
   }
 }
 
-void cmNinjaTargetGenerator::WriteDependencyScanConfig()
+void cmNinjaTargetGenerator::WriteCmakeDependencyScanInfo()
 {
   //
   // Create DependInfo.cmake file for target
   //
   this->OpenDependInfoFileStream();
-  
   cmGeneratedFileStream& os = this->GetDependInfoFileStream();
-  cmDependInfo::Write(os, *this->GeneratorTarget);
+
+  cmDependInfo depInfo(this->GetLocalGenerator());
+  depInfo.Write(os, *this->GeneratorTarget);
 
   this->CloseDependInfoFileStream();
 }

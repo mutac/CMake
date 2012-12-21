@@ -99,7 +99,7 @@ void cmNinjaNormalTargetGenerator::Generate()
   if (this->GetUseCmakeDependencyScanner())
   {
     // Create implicit dependency scanning config file (DepInfo.cmake)
-    this->WriteDependencyScanConfig();
+    this->WriteCmakeDependencyScanInfo();
 
     // Write implicit dependency scanning rule
     this->WriteDependencyScanBuildStatement();
